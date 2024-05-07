@@ -8,11 +8,11 @@ const hpp = require("hpp");
 
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
-const tourRouter = require("./routes/tourRoutes");
-const userRouter = require("./routes/userRoutes");
-const reviewRouter = require("./routes/reviewRoutes");
-const organisationRouter = require("./routes/organisationRoutes");
-const vehicleRouter = require("./routes/vehicleRoutes");
+// const tourRouter = require("./routes/tourRoutes");
+// const userRouter = require("./routes/userRoutes");
+// const reviewRouter = require("./routes/reviewRoutes");
+// const organisationRouter = require("./routes/organisationRoutes");
+// const vehicleRouter = require("./routes/vehicleRoutes");
 const uploadRouter = require('./routes/uploadRoutes');
 
 const app = express();
