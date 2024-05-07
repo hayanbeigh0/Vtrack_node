@@ -70,11 +70,11 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use("/api/v1/tours", tourRouter);
-app.use("/api/v1/users", userRouter);
-app.use("/api/v1/reviews", reviewRouter);
-app.use("/api/v1/organisations", organisationRouter);
-app.use("/api/v1/buses", vehicleRouter);
+// app.use("/api/v1/tours", tourRouter);
+// app.use("/api/v1/users", userRouter);
+// app.use("/api/v1/reviews", reviewRouter);
+// app.use("/api/v1/organisations", organisationRouter);
+// app.use("/api/v1/buses", vehicleRouter);
 app.use('/api/v1/uploads', uploadRouter);
 
 app.all("*", (req, res, next) => {
