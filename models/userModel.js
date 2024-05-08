@@ -48,9 +48,9 @@ const userSchema = mongoose.Schema({
     type: [mongoose.Schema.ObjectId],
     ref: "Organisation",
   },
-  buses: {
+  vehicles: {
     type: [mongoose.Schema.ObjectId],
-    ref: "Bus",
+    ref: "Vehicle",
   },
   passwordChangeAt: Date,
   passwordResetToken: String,
