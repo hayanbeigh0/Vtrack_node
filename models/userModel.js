@@ -58,6 +58,16 @@ const userSchema = mongoose.Schema({
   active: { type: Boolean, default: true, select: false },
 });
 
+userSchema.pre(/^delete/, async function (next) {
+  const busId = this._id;
+  console.log(`removing: ${busId}`);
+
+  // Update all organizations that reference this bus
+  await User.updateMany({}, { $pull: { vehicles: busId } });
+
+  next();
+});
+
 userSchema.pre("save", async function (next) {
   // Only run this function if the password was actually modified
   if (!this.isModified("password")) {

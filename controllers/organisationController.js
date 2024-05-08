@@ -30,9 +30,26 @@ exports.createOrganisation = (userRole) =>
     session.startTransaction();
     try {
       const userId = req.user.id;
+      // req.user = user; // Pass the updated user to the next middleware
+      req.body.owner = req.user.id;
+      req.body.createdBy = req.user.id;
+      const docs = await Organisation.create([req.body], { session });
+      const doc = docs[0];
+      let orgUpdateObj = {};
+      let vehicleUpdateObj = {};
+      if (doc._id) {
+        orgUpdateObj = {
+          $addToSet: { organisations: doc._id },
+        };
+      }
+      if (req.body.vehicles) {
+        vehicleUpdateObj = {
+          $addToSet: { vehicles: { $each: req.body.vehicles } },
+        };
+      }
       const user = await User.findByIdAndUpdate(
         userId,
-        { role: userRole },
+        { role: userRole, ...orgUpdateObj, ...vehicleUpdateObj },
         { session }
       );
 
@@ -41,11 +58,6 @@ exports.createOrganisation = (userRole) =>
         session.endSession();
         return res.status(404).json({ message: "User not found" });
       }
-
-      req.user = user; // Pass the updated user to the next middleware
-      req.body.owner = req.user.id;
-      req.body.createdBy = req.user.id;
-      const doc = await Organisation.create([req.body], { session });
 
       await session.commitTransaction();
       session.endSession();

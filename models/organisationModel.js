@@ -41,9 +41,9 @@ const organisationSchema = new mongoose.Schema(
       ],
     },
     createdAt: { type: Date, default: Date.now },
-    buses: {
+    vehicles: {
       type: [mongoose.Schema.ObjectId],
-      ref: "Bus",
+      ref: "Vehicle",
     },
     active: { type: Boolean, default: true, select: false },
   },
