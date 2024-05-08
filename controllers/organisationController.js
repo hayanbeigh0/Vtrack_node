@@ -20,15 +20,7 @@ exports.getOrganisations = factory.getAll(Organisation);
 
 exports.getOrganisation = factory.getOne(Organisation);
 // exports.getOrganisation = factory.getOne(Organisation, { path: "owner" });
-exports.updateOrganisation = (req, res, next) => {
-  console.log(`Update organisations body: ${req.body}`)
-  if (req.body.organisations) {
-    req.body.organisations = {
-      $push: { organisations: { $each: req.body.organisations } },
-    };
-  }
-  return factory.updateOne(Organisation);
-};
+exports.updateOrganisation = factory.updateOne(Organisation);
 
 exports.deleteOrganisation = factory.deleteOne(Organisation);
 
