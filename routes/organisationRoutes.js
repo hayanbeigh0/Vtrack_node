@@ -2,6 +2,7 @@ const express = require("express");
 
 const organisationController = require("../controllers/organisationController");
 const authController = require("../controllers/authController");
+const factory = require("../controllers/handlerFactory");
 
 const router = express.Router({ mergeParams: true });
 
@@ -9,10 +10,13 @@ router.use(authController.protect);
 
 router
   .route("/")
-  .post(organisationController.createOrganisation)
-  .get(
-    organisationController.getOrganisations
-  );
+  .post(
+    factory.startSessionMiddleware,
+    // factory.getSessionMiddleware,
+    // organisationController.changeUserRole("org-admin"),
+    organisationController.createOrganisation("org-admin")
+  )
+  .get(organisationController.getOrganisations);
 router
   .route("/:id")
   .get(organisationController.getOrganisation)

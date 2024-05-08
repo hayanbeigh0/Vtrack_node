@@ -1,7 +1,10 @@
+const Organisation = require("../models/organisationModel");
 const User = require("../models/userModel");
+const AppError = require("../utils/appError");
 // const AppError = require('../utils/appError');
 const catchAsync = require("../utils/catchAsync");
 const factory = require("./handlerFactory");
+const mongoose = require("mongoose");
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -13,84 +16,59 @@ const filterObj = (obj, ...allowedFields) => {
   return newObj;
 };
 
-exports.createOrganisation = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success",
-    data: {},
-  });
-});
-exports.getOrganisations = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success",
-    data: {},
-  });
-});
+exports.getOrganisations = factory.getAll(Organisation);
 
-exports.getOrganisation = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success",
-    message: "Route is not yet implemented!",
-  });
-});
-exports.updateOrganisation = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success",
-    message: "Route is not yet implemented!",
-  });
-});
-exports.deleteOrganisation = catchAsync(async (req, res, next) => {
-  res.status(200).json({
-    status: "success",
-    message: "Route is not yet implemented!",
-  });
-});
-
-exports.getMe = (req, res, next) => {
-  req.params.id = req.user.id;
-  next();
-};
-
-exports.updateMe = catchAsync(async (req, res, next) => {
-  // 1) Create error if user posts passwords data
-  if (req.body.password || req.body.passwordConfirm) {
-    return next(
-      new AppError(
-        "This route is not for password updates! Please use /updatePassword to update your password.",
-        400
-      )
-    );
+exports.getOrganisation = factory.getOne(Organisation);
+// exports.getOrganisation = factory.getOne(Organisation, { path: "owner" });
+exports.updateOrganisation = (req, res, next) => {
+  console.log(`Update organisations body: ${req.body}`)
+  if (req.body.organisations) {
+    req.body.organisations = {
+      $push: { organisations: { $each: req.body.organisations } },
+    };
   }
-  // 2) Filter out the properties that are not allowed to update
-  const filteredBody = filterObj(req.body, "name", "email");
-  // 3) Update the user data
-  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
-    new: true,
-    runValidators: true,
-  });
-  res.status(200).json({
-    status: "success",
-    data: {
-      user: updatedUser,
-    },
-  });
-});
-
-exports.createUser = (req, res) => {
-  res.status(500).json({
-    status: "fail",
-    message: "This route is not yet defined! Please use /signup instead.",
-  });
+  return factory.updateOne(Organisation);
 };
 
-exports.deleteMe = catchAsync(async (req, res) => {
-  await User.findByIdAndUpdate(req.user.id, { active: false });
-  res.status(204).json({
-    status: "success",
-    data: null,
-  });
-});
+exports.deleteOrganisation = factory.deleteOne(Organisation);
 
-exports.getAllUsers = factory.getAll(User);
-exports.getUser = factory.getOne(User);
-exports.updateUser = factory.updateOne(User);
-exports.deleteUser = factory.deleteOne(User);
+exports.createOrganisation = (userRole) =>
+  catchAsync(async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      const userId = req.user.id;
+      const user = await User.findByIdAndUpdate(
+        userId,
+        { role: userRole },
+        { session }
+      );
+
+      if (!user) {
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      req.user = user; // Pass the updated user to the next middleware
+      req.body.owner = req.user.id;
+      req.body.createdBy = req.user.id;
+      const doc = await Organisation.create([req.body], { session });
+
+      await session.commitTransaction();
+      session.endSession();
+
+      return res.status(201).json({
+        status: "success",
+        data: {
+          data: doc,
+        },
+      });
+    } catch (e) {
+      await session.abortTransaction();
+      session.endSession();
+      // Revert the user role change
+      // await User.findByIdAndUpdate(userId, { role: "default" });
+      return next(new AppError(e, 400));
+    }
+  });

@@ -1,7 +1,7 @@
-const User = require('../models/userModel');
+const User = require("../models/userModel");
 // const AppError = require('../utils/appError');
-const catchAsync = require('../utils/catchAsync');
-const factory = require('../controllers/handlerFactory');
+const catchAsync = require("../utils/catchAsync");
+const factory = require("../controllers/handlerFactory");
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -23,20 +23,36 @@ exports.updateMe = catchAsync(async (req, res, next) => {
   if (req.body.password || req.body.passwordConfirm) {
     return next(
       new AppError(
-        'This route is not for password updates! Please use /updatePassword to update your password.',
-        400,
-      ),
+        "This route is not for password updates! Please use /updatePassword to update your password.",
+        400
+      )
     );
   }
+  let orgUpdateObj = {};
+  let vehicleUpdateObj = {};
+  if (req.body.organisations) {
+    orgUpdateObj = {
+      $addToSet: { organisations: { $each: req.body.organisations } },
+    };
+  }
+  if (req.body.vehicles) {
+    vehicleUpdateObj = {
+      $addToSet: { organisations: { $each: req.body.organisations } },
+    };
+  }
   // 2) Filter out the properties that are not allowed to update
-  const filteredBody = filterObj(req.body, 'name', 'email');
+  const filteredBody = filterObj(req.body, "name", "email");
   // 3) Update the user data
-  const updatedUser = await User.findByIdAndUpdate(req.user.id, filteredBody, {
-    new: true,
-    runValidators: true,
-  });
+  const updatedUser = await User.findByIdAndUpdate(
+    req.user.id,
+    { ...filteredBody, ...orgUpdateObj, ...vehicleUpdateObj },
+    {
+      new: true,
+      runValidators: true,
+    }
+  );
   res.status(200).json({
-    status: 'success',
+    status: "success",
     data: {
       user: updatedUser,
     },
@@ -45,15 +61,15 @@ exports.updateMe = catchAsync(async (req, res, next) => {
 
 exports.createUser = (req, res) => {
   res.status(500).json({
-    status: 'fail',
-    message: 'This route is not yet defined! Please use /signup instead.',
+    status: "fail",
+    message: "This route is not yet defined! Please use /signup instead.",
   });
 };
 
 exports.deleteMe = catchAsync(async (req, res) => {
   await User.findByIdAndUpdate(req.user.id, { active: false });
   res.status(204).json({
-    status: 'success',
+    status: "success",
     data: null,
   });
 });

@@ -5,21 +5,30 @@ const vehicleSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, "Bus name cannot be empty!"],
+      required: [true, "Vehicle name cannot be empty!"],
+      unique: true,
+      trim: true,
+      maxlength: [
+        20,
+        "A vehicle name must have less or equal to 20 characters",
+      ],
     },
     driver: {
       type: mongoose.Schema.ObjectId,
       ref: "User",
+      unique: true,
+      trim: true,
     },
-    busNumber: {
+    vehicleNumber: {
       type: Number,
-      required: [true, "Bus number cannot be empty!"],
+      required: [true, "Vehicle number cannot be empty!"],
+      unique: true,
+      trim: true,
     },
     route: {
       type: String,
-      required: [true, "Bus route cannot be empty!"],
+      required: [true, "Vehicle route cannot be empty!"],
     },
-    // rating: { type: Number, min: 1, max: 5 },
     createdAt: { type: Date, default: Date.now },
     organisation: {
       type: mongoose.Schema.ObjectId,
@@ -29,6 +38,7 @@ const vehicleSchema = new mongoose.Schema(
       type: [mongoose.Schema.ObjectId],
       ref: "User",
     },
+    active: { type: Boolean, default: true, select: false },
   },
   {
     toJSON: { virtuals: true },
@@ -36,6 +46,10 @@ const vehicleSchema = new mongoose.Schema(
   }
 );
 
+vehicleSchema.pre(/^find/, function (next) {
+  this.find({ active: { $ne: false } });
+  next();
+});
 // vehicleSchema.index({ tour: 1, user: 1 }, { unique: true });
 
 // vehicleSchema.pre(/^find/, function (next) {
