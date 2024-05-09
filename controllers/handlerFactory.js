@@ -3,13 +3,34 @@ const AppError = require("../utils/appError");
 const catchAsync = require("../utils/catchAsync");
 const User = require("../models/userModel");
 const mongoose = require("mongoose");
+const Organisation = require("../models/organisationModel");
 
 exports.deleteOne = (Model) =>
   catchAsync(async (req, res, next) => {
-    const doc = await Model.findByIdAndDelete(req.params.id);
-
-    if (!doc) {
-      return next(new AppError("No document found with that ID", 404));
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+      if (Model === Organisation) {
+        await User.updateMany(
+          {},
+          { $pull: { organisations: req.params.id } },
+          { session }
+        );
+      }
+      const doc = await Model.findByIdAndDelete(req.params.id, { session });
+      if (!doc) {
+        console.log("aborting transaction...");
+        await session.abortTransaction();
+        session.endSession();
+        return next(new AppError("No document found with that ID", 404));
+      }
+      await session.commitTransaction();
+      session.endSession();
+    } catch (e) {
+      console.log("aborting...");
+      await session.abortTransaction();
+      session.endSession();
+      return next(new AppError(`Error: ${e}`, 404));
     }
 
     res.status(204).json({

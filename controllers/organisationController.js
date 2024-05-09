@@ -71,8 +71,6 @@ exports.createOrganisation = (userRole) =>
     } catch (e) {
       await session.abortTransaction();
       session.endSession();
-      // Revert the user role change
-      // await User.findByIdAndUpdate(userId, { role: "default" });
       return next(new AppError(e, 400));
     }
   });

@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { findByIdAndUpdate, findOne } = require("./userModel");
+const User = require("./userModel");
 
 const organisationSchema = new mongoose.Schema(
   {
@@ -54,6 +55,21 @@ const organisationSchema = new mongoose.Schema(
 );
 
 organisationSchema.index({ name: 1, buses: 1 });
+
+organisationSchema.post(
+  "remove",
+  { document: true, query: false },
+  async function (doc) {
+    if (doc) {
+      console.log(doc);
+      const orgId = doc._id;
+      console.log(`Removing organisation with ID: ${orgId}`);
+
+      // Update all users that reference this organisation
+      await User.updateMany({}, { $pull: { organisations: orgId } });
+    }
+  }
+);
 
 organisationSchema.pre(/^find/, function (next) {
   this.find({ active: { $ne: false } }); // This will not return any organisation which has "active" set to false.
