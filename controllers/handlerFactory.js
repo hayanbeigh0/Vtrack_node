@@ -4,40 +4,26 @@ const catchAsync = require("../utils/catchAsync");
 const User = require("../models/userModel");
 const mongoose = require("mongoose");
 const Organisation = require("../models/organisationModel");
+const { setTransaction } = require("./transactionController");
 
-exports.deleteOne = (Model) =>
-  catchAsync(async (req, res, next) => {
-    const session = await mongoose.startSession();
-    session.startTransaction();
-    try {
-      if (Model === Organisation) {
-        await User.updateMany(
-          {},
-          { $pull: { organisations: req.params.id } },
-          { session }
-        );
-      }
-      const doc = await Model.findByIdAndDelete(req.params.id, { session });
-      if (!doc) {
-        console.log("aborting transaction...");
-        await session.abortTransaction();
-        session.endSession();
-        return next(new AppError("No document found with that ID", 404));
-      }
-      await session.commitTransaction();
-      session.endSession();
-    } catch (e) {
-      console.log("aborting...");
-      await session.abortTransaction();
-      session.endSession();
-      return next(new AppError(`Error: ${e}`, 404));
+exports.deleteOne = (Model) => {
+  return setTransaction(async (req, res, next, session) => {
+    if (Model === Organisation) {
+      await User.updateMany(
+        {},
+        { $pull: { organisations: req.params.id } },
+        { session }
+      );
     }
-
+    const doc = await Model.findByIdAndDelete(req.params.id, { session });
+    if (!doc) {
+      throw new Error("No document found with that ID");
+    }
     res.status(204).json({
-      status: "success",
       data: null,
     });
   });
+};
 
 exports.updateOne = (Model) =>
   catchAsync(async (req, res, next) => {
