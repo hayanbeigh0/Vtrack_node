@@ -4,7 +4,7 @@ const catchAsync = require("../utils/catchAsync");
 const User = require("../models/userModel");
 const mongoose = require("mongoose");
 const Organisation = require("../models/organisationModel");
-const { setTransaction } = require("./transactionController");
+const setTransaction = require("./transactionController");
 
 exports.deleteOne = (Model) => {
   return setTransaction(async (req, res, next, session) => {

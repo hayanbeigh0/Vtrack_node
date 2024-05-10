@@ -1,6 +1,7 @@
-const { mongoose } = require("mongoose");
+const mongoose = require("mongoose");
+const AppError = require("../utils/appError");
 
-exports.setTransaction = (fn) => {
+module.exports = (fn) => {
   return async (req, res, next) => {
     let session;
     try {
