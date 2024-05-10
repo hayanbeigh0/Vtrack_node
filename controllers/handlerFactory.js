@@ -6,9 +6,13 @@ const mongoose = require("mongoose");
 const Organisation = require("../models/organisationModel");
 const setTransaction = require("./transactionController");
 
+// On each delete, if the references of the document also needs to be deleted, 
+// then we will have to check if the document has a model type which can have references of 
+// its documents in the other models / schema's.
+
 exports.deleteOne = (Model) => {
   return setTransaction(async (req, res, next, session) => {
-    if (Model === Organisation) {
+    if (Model === Organisation) { // Here we know that the document of the Organisation model/schema can have references in the User model/schema also.
       await User.updateMany(
         {},
         { $pull: { organisations: req.params.id } },
