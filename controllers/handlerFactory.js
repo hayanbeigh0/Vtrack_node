@@ -7,7 +7,7 @@ const Organisation = require("../models/organisationModel");
 const setTransaction = require("./transactionController");
 
 // On each delete, if the references of the document also needs to be deleted, 
-// then we will have to check if the document has a model type which can have references of 
+// then we will have to check if the document has a model/schema type which can have references of 
 // its documents in the other models / schema's.
 
 exports.deleteOne = (Model) => {
