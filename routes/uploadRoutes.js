@@ -11,7 +11,6 @@ const imageSchema = new mongoose.Schema({
   contentType: String,
 });
 
-console.log("uploading image...");
 const Image = mongoose.model("Image", imageSchema);
 
 const storage = multer.memoryStorage(); // Use memory storage to store file in memory
