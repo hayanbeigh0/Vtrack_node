@@ -1,30 +1,41 @@
-const express = require('express');
+const express = require("express");
 
-const reviewController = require('../controllers/reviewController');
-const authController = require('../controllers/authController');
+const reviewController = require("../controllers/reviewController");
+const vehicleController = require("../controllers/vehicleController");
+const authController = require("../controllers/authController");
 
 const router = express.Router({ mergeParams: true });
 
 router.use(authController.protect);
 
 router
-  .route('/')
+  .route("/")
   .post(
-    authController.restrictTo('user'),
-    reviewController.setTourUserIds,
-    reviewController.createReview,
-  )
-  .get(reviewController.getAllReviews);
+    authController.restrictTo("user", "admin", "org-admin"),
+    vehicleController.createVehicleForOrganisation
+  );
 router
-  .route('/:id')
-  .get(reviewController.getReview)
+  .route("/:organisationId")
+  .post(
+    authController.restrictTo("admin", "org-admin"),
+    vehicleController.createVehicleForOrganisation
+  );
+router
+  .route("/getOrgVehicles/:organisationId")
+  .get(
+    authController.restrictTo("admin", "org-admin"),
+    vehicleController.getVehicles
+  );
+router
+  .route("/:id")
+  .get(vehicleController.getVehicle)
   .delete(
-    authController.restrictTo('user', 'admin'),
-    reviewController.deleteReview,
+    authController.restrictTo("org-admin", "admin"),
+    vehicleController.deleteVehicle
   )
   .patch(
-    authController.restrictTo('user', 'admin'),
-    reviewController.updateReview,
+    authController.restrictTo("org-admin", "admin"),
+    vehicleController.updateVehicle
   );
 
 module.exports = router;

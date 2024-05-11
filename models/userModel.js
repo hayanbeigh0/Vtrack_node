@@ -58,6 +58,8 @@ const userSchema = mongoose.Schema({
   active: { type: Boolean, default: true, select: false },
 });
 
+userSchema.index({ organisations: 1 });
+
 userSchema.pre("save", async function (next) {
   // Only run this function if the password was actually modified
   if (!this.isModified("password")) {

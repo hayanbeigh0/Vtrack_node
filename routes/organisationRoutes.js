@@ -11,9 +11,6 @@ router.use(authController.protect);
 router
   .route("/")
   .post(
-    factory.startSessionMiddleware,
-    // factory.getSessionMiddleware,
-    // organisationController.changeUserRole("org-admin"),
     organisationController.createOrganisation("org-admin")
   )
   .get(organisationController.getOrganisations);

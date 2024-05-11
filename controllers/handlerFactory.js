@@ -5,17 +5,55 @@ const User = require("../models/userModel");
 const mongoose = require("mongoose");
 const Organisation = require("../models/organisationModel");
 const setTransaction = require("./transactionController");
+// const organisationController = require("./organisationController");
+const Vehicle = require("../models/vehicleModel");
+const helpers = require("../utils/helper");
 
+exports.fn = function () {
+  console.log("this is the export functionx");
+};
 
 exports.deleteOne = (Model) => {
-  // On each delete, if the references of the document also needs to be deleted, 
-  // then we will have to check if the document has a model/schema type which can have references of 
+  // On each delete, if the references of the document also needs to be deleted,
+  // then we will have to check if the document has a model/schema type which can have references of
   // its documents in the other models / schema's.
   return setTransaction(async (req, res, next, session) => {
-    if (Model === Organisation) { // Here we know that the document of the Organisation model/schema can have references in the User model/schema also.
+    if (Model === Organisation) {
+      // Here we know that the document of the Organisation model/schema can have references in the User model/schema also.
       await User.updateMany(
         {},
         { $pull: { organisations: req.params.id } },
+        { session }
+      );
+      await Vehicle.updateMany(
+        { organisation: req.params.id },
+        { $unset: { organisation: "" } },
+        { session }
+      );
+    }
+    if (Model === Vehicle) {
+      // Here we know that the document of the Vehicle model/schema can have references in the User model/schema also.
+      await User.updateMany(
+        {},
+        { $pull: { vehicles: req.params.id } },
+        { session }
+      );
+      await Organisation.updateMany(
+        {},
+        { $pull: { vehicles: req.params.id } },
+        { session }
+      );
+    }
+    if (Model === User) {
+      // Here we know that the document of the User model/schema can have references in the User model/schema also.
+      await Vehicle.updateMany(
+        {},
+        { $pull: { users: req.params.id } },
+        { session }
+      );
+      await Organisation.updateMany(
+        {},
+        { $pull: { users: req.params.id } },
         { session }
       );
     }
@@ -30,12 +68,22 @@ exports.deleteOne = (Model) => {
 };
 
 exports.updateOne = (Model) =>
-  catchAsync(async (req, res, next) => {
-    console.log(req.body);
+  setTransaction(async (req, res, next, session) => {
+    console.log(req.params.id);
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
+    console.log(doc);
+    if (Model === Organisation) {
+      await helpers.updateVehiclesAndUser(
+        doc,
+        req.user.id,
+        "org-admin",
+        req.body.vehicles,
+        session
+      );
+    }
 
     if (!doc) {
       return next(new AppError("No document found with that ID", 404));
@@ -83,17 +131,38 @@ exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
     // To allow for nested GET reviews on Tour (hack)
     let filter = {};
-    if (req.params.tourId) filter = { tour: req.params.tourId };
+    if (req.params.tourId) filter = { ...filter, tour: req.params.tourId };
+    if (req.params.organisationId) {
+      if (Model === User) {
+        filter = {
+          organisations: {
+            $in: [mongoose.Types.ObjectId(req.params.organisationId)],
+          },
+        };
+      }
+      if (Model === Vehicle) {
+        filter = {
+          organisation: req.params.organisationId,
+        };
+      }
+    }
+    if (req.params.userId)
+      filter = { ...filter, users: { $in: [req.params.userId] } };
+
+    console.log("filter", filter);
 
     // BUILD THE QUERY
-    const features = new APIFeatures(Model.find(), req.query)
+    let features = new APIFeatures(Model.find(filter), req.query)
       .filter()
       .sort()
       .limitFields()
       .paginate();
 
+    console.log(features);
+
     // EXECUTE THE QUERY
     const data = await features.query;
+    // console.log(data);
 
     // SEND RESPONSE
     res.status(200).json({
@@ -104,18 +173,3 @@ exports.getAll = (Model) =>
       },
     });
   });
-
-exports.startSessionMiddleware = async (req, res, next) => {
-  req.locals = req.locals || {};
-  req.locals.session = await mongoose.startSession();
-  req.locals.session.startTransaction();
-  next();
-};
-
-exports.getSessionMiddleware = (req, res, next) => {
-  if (!req.locals || !req.locals.session) {
-    return res.status(500).json({ message: "Session not found" });
-  }
-  req.session = req.locals.session;
-  next();
-};
