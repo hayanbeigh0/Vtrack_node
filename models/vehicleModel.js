@@ -45,7 +45,23 @@ const vehicleSchema = new mongoose.Schema(
       ref: "User",
     },
     pickupLocations: [
-      { type: mongoose.Schema.ObjectId, ref: "PickupLocation" },
+      {
+        // GeoJSON
+        name: {
+          type: String,
+          trim: true,
+        },
+        type: {
+          type: String,
+          default: "Point",
+          enum: ["Point"],
+        },
+        coordinates: {
+          type: [Number],
+        },
+        address: String,
+        description: String,
+      },
     ],
     active: { type: Boolean, default: true, select: false },
   },
@@ -61,6 +77,7 @@ vehicleSchema.pre(/^find/, function (next) {
 });
 
 vehicleSchema.index({ organisation: 1 });
+vehicleSchema.index({ pickupLocations: 1 });
 vehicleSchema.index({ organisation: 1, vehicleNumber: 1 }, { unique: true });
 vehicleSchema.index({ name: 1, organisation: 1 }, { unique: true });
 

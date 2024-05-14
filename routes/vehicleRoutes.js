@@ -42,9 +42,10 @@ router
     vehicleController.updateVehicle
   );
 
-// router.route("/startLocatioStream/:vehicleId/ws").post(
-//   // authController.restrictTo("admin", "org-admin"),
-//   locationController.createLocationSocketServer
-// );
+router
+  .route("/getPickupLocations/:vehicleId")
+  .get(vehicleController.getPickupLocations)
+  .patch(vehicleController.addPickupLocations);
+
 
 module.exports = router;

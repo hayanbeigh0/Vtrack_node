@@ -60,3 +60,30 @@ exports.createVehicleForOrganisation = setTransaction(
     });
   }
 );
+exports.getPickupLocations = catchAsync(async (req, res, next) => {
+  const pickupLocations = await Vehicle.findById(req.params.vehicleId).select('pickupLocations');
+  // const pickupLocations = vehicle.pickupLocations;
+  res.status(200).json({
+    status: "success",
+    data: {
+      pickupLocations,
+    },
+  });
+});
+
+exports.addPickupLocations = catchAsync(async (req, res, next) => {
+  const vehicle = await Vehicle.findByIdAndUpdate(
+    req.params.vehicleId,
+    {
+      $push: { pickupLocations: { $each: req.body.pickupLocations } },
+    },
+    { new: true }
+  );
+  const newPickupLocations = vehicle.pickupLocations;
+  res.status(201).json({
+    status: "success",
+    data: {
+      newPickupLocations,
+    },
+  });
+});
