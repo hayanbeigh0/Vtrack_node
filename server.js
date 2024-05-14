@@ -19,6 +19,7 @@ mongoose
   });
 
 const app = require('./app');
+const { createLocationSocketServer } = require('./controllers/locationController');
 
 const port = process.env.PORT || 3000;
 
@@ -31,6 +32,8 @@ process.on('uncaughtException', (err) => {
 const server = app.listen(port, () => {
   console.log(`App running on port ${port}...`);
 });
+
+createLocationSocketServer();
 
 process.on('unhandledRejection', (err) => {
   console.log('UNHANDLER REJECTION❗️. Shutting down...');

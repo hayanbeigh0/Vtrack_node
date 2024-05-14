@@ -3,6 +3,8 @@ const express = require("express");
 const reviewController = require("../controllers/reviewController");
 const vehicleController = require("../controllers/vehicleController");
 const authController = require("../controllers/authController");
+const locationController = require("../controllers/locationController");
+const helpers = require("../utils/helper");
 
 const router = express.Router({ mergeParams: true });
 
@@ -12,6 +14,7 @@ router
   .route("/")
   .post(
     authController.restrictTo("user", "admin", "org-admin"),
+    helpers.checkUserOrganisation,
     vehicleController.createVehicleForOrganisation
   );
 router
@@ -35,7 +38,13 @@ router
   )
   .patch(
     authController.restrictTo("org-admin", "admin"),
+    helpers.checkUserOrganisation,
     vehicleController.updateVehicle
   );
+
+// router.route("/startLocatioStream/:vehicleId/ws").post(
+//   // authController.restrictTo("admin", "org-admin"),
+//   locationController.createLocationSocketServer
+// );
 
 module.exports = router;

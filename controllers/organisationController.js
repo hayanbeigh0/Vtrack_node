@@ -26,15 +26,19 @@ exports.createOrganisation = (userRole) =>
     const userId = req.user.id;
     req.body.owner = req.user.id;
     req.body.createdBy = req.user.id;
+
+    console.log("reached here...");
     const docs = await Organisation.create([req.body], { session });
     const doc = docs[0];
-    req.user = await helpers.updateVehiclesAndUser(
-      doc,
-      userId,
-      userRole,
-      req.body.vehicles,
-      session
-    ); // Pass the updated user to the next middleware
+    if (req.body.vehicles) {
+      req.user = await helpers.updateVehiclesAndUser(
+        doc,
+        userId,
+        userRole,
+        req.body.vehicles,
+        session
+      ); // Pass the updated user to the next middleware
+    }
 
     return res.status(201).json({
       status: "success",

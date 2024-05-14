@@ -44,6 +44,9 @@ const vehicleSchema = new mongoose.Schema(
       type: [mongoose.Schema.ObjectId],
       ref: "User",
     },
+    pickupLocations: [
+      { type: mongoose.Schema.ObjectId, ref: "PickupLocation" },
+    ],
     active: { type: Boolean, default: true, select: false },
   },
   {
@@ -58,8 +61,8 @@ vehicleSchema.pre(/^find/, function (next) {
 });
 
 vehicleSchema.index({ organisation: 1 });
-vehicleSchema.index({ organisation: 1, vehicleNumber: 1 });
-vehicleSchema.index({ name: 1, organisation: 1 });
+vehicleSchema.index({ organisation: 1, vehicleNumber: 1 }, { unique: true });
+vehicleSchema.index({ name: 1, organisation: 1 }, { unique: true });
 
 const Vehicle = mongoose.model("Vehicle", vehicleSchema);
 

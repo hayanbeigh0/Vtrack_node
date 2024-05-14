@@ -52,6 +52,7 @@ const userSchema = mongoose.Schema({
     type: [mongoose.Schema.ObjectId],
     ref: "Vehicle",
   },
+  pickupLocation: { type: mongoose.Schema.ObjectId, ref: "PickupLocation" },
   passwordChangeAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,

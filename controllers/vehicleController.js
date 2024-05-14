@@ -19,6 +19,7 @@ const filterObj = (obj, ...allowedFields) => {
 };
 
 exports.getVehicles = factory.getAll(Vehicle);
+exports.getOrganisationVehicles = factory.getAll(Vehicle);
 
 exports.getVehicle = factory.getOne(Vehicle);
 // exports.getVehicle = factory.getOne(Vehicle, { path: "owner" });
