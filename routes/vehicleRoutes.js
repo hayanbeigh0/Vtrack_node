@@ -45,7 +45,6 @@ router
 router
   .route("/getPickupLocations/:vehicleId")
   .get(vehicleController.getPickupLocations)
-  .patch(vehicleController.addPickupLocations);
-
+  .post(vehicleController.addPickupLocations);
 
 module.exports = router;
