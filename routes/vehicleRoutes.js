@@ -1,9 +1,7 @@
 const express = require("express");
 
-const reviewController = require("../controllers/reviewController");
 const vehicleController = require("../controllers/vehicleController");
 const authController = require("../controllers/authController");
-const locationController = require("../controllers/locationController");
 const helpers = require("../utils/helper");
 
 const router = express.Router({ mergeParams: true });
