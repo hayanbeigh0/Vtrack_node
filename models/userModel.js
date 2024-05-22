@@ -52,7 +52,23 @@ const userSchema = mongoose.Schema({
     type: [mongoose.Schema.ObjectId],
     ref: "Vehicle",
   },
-  pickupLocation: { type: mongoose.Schema.ObjectId, ref: "PickupLocation" },
+  pickupLocation: {
+    // GeoJSON
+    name: {
+      type: String,
+      trim: true,
+    },
+    type: {
+      type: String,
+      default: "Point",
+      enum: ["Point"],
+    },
+    coordinates: {
+      type: [Number],
+    },
+    address: String,
+    description: String,
+  },
   passwordChangeAt: Date,
   passwordResetToken: String,
   passwordResetExpires: Date,

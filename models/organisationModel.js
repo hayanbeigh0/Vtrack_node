@@ -46,6 +46,23 @@ const organisationSchema = new mongoose.Schema(
       type: [mongoose.Schema.ObjectId],
       ref: "Vehicle",
     },
+    location: {
+      // GeoJSON
+      name: {
+        type: String,
+        trim: true,
+      },
+      type: {
+        type: String,
+        default: "Point",
+        enum: ["Point"],
+      },
+      coordinates: {
+        type: [Number],
+      },
+      address: String,
+      description: String,
+    },
     active: { type: Boolean, default: true, select: false },
   },
   {
