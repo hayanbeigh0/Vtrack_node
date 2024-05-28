@@ -5,6 +5,7 @@ const helmet = require("helmet");
 const mongoSanitize = require("express-mongo-sanitize");
 const xss = require("xss-clean");
 const hpp = require("hpp");
+const cors = require("cors");
 
 const AppError = require("./utils/appError");
 const globalErrorHandler = require("./controllers/errorController");
@@ -13,7 +14,7 @@ const userRouter = require("./routes/userRoutes");
 const reviewRouter = require("./routes/reviewRoutes");
 const organisationRouter = require("./routes/organisationRoutes");
 const vehicleRouter = require("./routes/vehicleRoutes");
-const uploadRouter = require('./routes/uploadRoutes');
+const uploadRouter = require("./routes/uploadRoutes");
 
 const app = express();
 
@@ -62,6 +63,9 @@ app.use(
   })
 );
 
+// Implement CORS
+app.use(cors());
+
 // Serving static files
 app.use(express.static(`${__dirname}/public`));
 
@@ -75,7 +79,7 @@ app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/organisations", organisationRouter);
 app.use("/api/v1/vehicles", vehicleRouter);
-app.use('/api/v1/uploads', uploadRouter);
+app.use("/api/v1/uploads", uploadRouter);
 
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find the ${req.originalUrl} on this server!`, 404));
