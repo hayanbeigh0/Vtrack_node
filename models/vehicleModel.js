@@ -12,6 +12,10 @@ const vehicleSchema = new mongoose.Schema(
         "A vehicle name must have less or equal to 20 characters",
       ],
     },
+    capacity: {
+      type: Number,
+      required: [true, "Vehicle capacity cannot be empty!"],
+    },
     driver: {
       type: mongoose.Schema.ObjectId,
       ref: "User",
