@@ -76,25 +76,3 @@ exports.acceptInvite = catchAsync(async (req, res) => {
     },
   });
 });
-
-// async function sendInviteEmail(email, token, organisationId) {
-//   const transporter = nodemailer.createTransport({
-//     // Configure your email service here
-//     service: "Gmail",
-//     auth: {
-//       user: "your-email@gmail.com",
-//       pass: "your-email-password",
-//     },
-//   });
-
-//   const inviteLink = `http://localhost:${PORT}/invite/accept?token=${token}&organisationId=${organisationId}`;
-
-//   const mailOptions = {
-//     from: "hayanbeigh119@gmail.com",
-//     to: email,
-//     subject: "Invitation to join our Organisation",
-//     text: `You have been invited to join our organisation. Click the link to accept the invitation: ${inviteLink}`,
-//   };
-
-//   await transporter.sendMail(mailOptions);
-// }
