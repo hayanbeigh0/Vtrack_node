@@ -92,18 +92,13 @@ exports.deleteUser = factory.deleteOne(User);
 exports.searchUser = catchAsync(async (req, res) => {
   const { name, role, organisationId } = req.query;
   let searchCriteria;
-  if (organisationId) {
-    searchCriteria = {
-      ...(name && { name: { $regex: new RegExp(name, "i") } }),
-      ...(role && { role: role }),
-      ...(organisationId && { organisations: organisationId }),
-    };
-  } else {
-    searchCriteria = {
-      name: { $regex: new RegExp(name, "i") },
-      role: role, // Case insensitive search
-    };
-  }
+
+  searchCriteria = {
+    ...(name && { name: { $regex: new RegExp(name, "i") } }),
+    ...(role && { role: role }),
+    ...(organisationId && { organisations: organisationId }),
+  };
+
   const users = await User.find(searchCriteria).populate("organisations");
   if (users) {
     res.status(200).json({
