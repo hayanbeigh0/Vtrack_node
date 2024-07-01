@@ -8,6 +8,7 @@ const setTransaction = require("./transactionController");
 // const organisationController = require("./organisationController");
 const Vehicle = require("../models/vehicleModel");
 const helpers = require("../utils/helper");
+const Notification = require("../models/notificationModel");
 
 exports.fn = function () {
   console.log("this is the export functionx");
@@ -111,18 +112,34 @@ exports.createOne = (Model) =>
 
 exports.getOne = (Model, popOptions) =>
   catchAsync(async (req, res, next) => {
-    const query = Model.findById(req.params.id);
-    if (popOptions) query.populate(popOptions);
-    const doc = await query; // doc.find({ _id: req.params.id });
+    let doc;
+    let unreadNotificationsCount = 0;
+
+    if (Model === User) {
+      unreadNotificationsCount = await Notification.countDocuments({
+        user: req.user.id,
+        readStatus: false,
+      });
+    }
+
+    let query = Model.findById(req.params.id);
+    if (popOptions) query = query.populate(popOptions);
+    doc = await query;
 
     if (!doc) {
       return next(new AppError("No document found with that ID", 404));
     }
 
+    // Convert the Mongoose document to a plain JavaScript object
+    let docObject = doc.toObject();
+
+    // Add unreadNotificationsCount to the plain JavaScript object
+    docObject.unreadNotificationsCount = unreadNotificationsCount;
+
     res.status(200).json({
       status: "success",
       data: {
-        data: doc,
+        data: docObject, // Include the modified document object
       },
     });
   });
@@ -173,3 +190,40 @@ exports.getAll = (Model) =>
       },
     });
   });
+
+async function whenUserModel(req) {
+  const aggregationPipeline = [
+    { $match: { _id: mongoose.Types.ObjectId(req.user.id) } },
+    {
+      $lookup: {
+        from: "notifications",
+        let: { userId: "$_id" },
+        pipeline: [
+          {
+            $match: {
+              $expr: {
+                $and: [
+                  { $eq: ["$user", "$$userId"] },
+                  { $eq: ["$readStatus", false] },
+                ],
+              },
+            },
+          },
+          { $count: "unreadCount" },
+        ],
+        as: "unreadNotifications",
+      },
+    },
+    {
+      $addFields: {
+        unreadNotificationsCount: {
+          $arrayElemAt: ["$unreadNotifications.unreadCount", 0],
+        },
+      },
+    },
+    { $project: { unreadNotifications: 0 } }, // Optionally, remove the unreadNotifications array from the result
+  ];
+
+  const results = await User.aggregate(aggregationPipeline);
+  return results;
+}

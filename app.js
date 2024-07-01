@@ -15,6 +15,8 @@ const reviewRouter = require("./routes/reviewRoutes");
 const organisationRouter = require("./routes/organisationRoutes");
 const vehicleRouter = require("./routes/vehicleRoutes");
 const uploadRouter = require("./routes/uploadRoutes");
+const inviteRouter = require("./routes/inviteRoutes");
+const notificationRouter = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -80,6 +82,8 @@ app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/organisations", organisationRouter);
 app.use("/api/v1/vehicles", vehicleRouter);
 app.use("/api/v1/uploads", uploadRouter);
+app.use("/api/v1/invite", inviteRouter);
+app.use("/api/v1/notifications", notificationRouter);
 
 app.all("*", (req, res, next) => {
   next(new AppError(`Can't find the ${req.originalUrl} on this server!`, 404));
