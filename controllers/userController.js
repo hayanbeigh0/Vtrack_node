@@ -91,9 +91,8 @@ exports.deleteUser = factory.deleteOne(User);
 
 exports.searchUser = catchAsync(async (req, res) => {
   const { name, role, organisationId } = req.query;
-  let searchCriteria;
 
-  searchCriteria = {
+  const searchCriteria = {
     ...(name && { name: { $regex: new RegExp(name, "i") } }),
     ...(role && { role: role }),
     ...(organisationId && { organisations: organisationId }),
