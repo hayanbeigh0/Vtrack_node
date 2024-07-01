@@ -8,6 +8,7 @@ const userSchema = mongoose.Schema({
     type: String,
     required: [true, "Please tell us your name"],
     trim: true,
+    index: "text",
   },
   email: {
     type: String,
@@ -76,6 +77,7 @@ const userSchema = mongoose.Schema({
 });
 
 userSchema.index({ organisations: 1 });
+userSchema.index({ name: 1 });
 
 userSchema.pre("save", async function (next) {
   // Only run this function if the password was actually modified

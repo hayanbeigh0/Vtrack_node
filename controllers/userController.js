@@ -3,10 +3,10 @@ const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const factory = require("../controllers/handlerFactory");
 
-const filterObj = (obj, ...allowedFields) => {
+const filterObj = (obj, ...unAllowedFields) => {
   const newObj = {};
   Object.keys(obj).forEach((el) => {
-    if (allowedFields.includes(el)) {
+    if (!unAllowedFields.includes(el)) {
       newObj[el] = obj[el];
     }
   });
@@ -41,7 +41,14 @@ exports.updateMe = catchAsync(async (req, res, next) => {
     };
   }
   // 2) Filter out the properties that are not allowed to update
-  const filteredBody = filterObj(req.body, "name", "email");
+  const filteredBody = filterObj(
+    req.body,
+    "name",
+    "email",
+    "accessToken",
+    "organisations",
+    "vehicles"
+  );
   // 3) Update the user data
   const updatedUser = await User.findByIdAndUpdate(
     req.user.id,
@@ -75,6 +82,34 @@ exports.deleteMe = catchAsync(async (req, res) => {
 });
 
 exports.getAllUsers = factory.getAll(User);
-exports.getUser = factory.getOne(User);
+exports.getUser = factory.getOne(User, {
+  path: "organisations",
+  select: "name", // Only include the name field
+});
 exports.updateUser = factory.updateOne(User);
 exports.deleteUser = factory.deleteOne(User);
+
+exports.searchUser = catchAsync(async (req, res) => {
+  const { name, role } = req.query;
+  const users = await User.find({
+    name: { $regex: new RegExp(name, "i") },
+    role: role, // Case insensitive search
+  }).populate("organisations");
+  if (users) {
+    res.status(200).json({
+      status: "success",
+      results: users.length,
+      data: {
+        users,
+      },
+    });
+  } else {
+    res.status(200).json({
+      status: "fail",
+      results: 0,
+      data: {
+        users: [],
+      },
+    });
+  }
+});

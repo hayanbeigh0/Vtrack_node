@@ -16,6 +16,7 @@ router.use(authController.protect);
 router.patch("/updateMyPassword", authController.updatePassword);
 
 router.get("/me", userController.getMe, userController.getUser);
+router.get("/search", userController.searchUser);
 router.patch("/updateMe", userController.updateMe);
 router.delete("/deleteMe", userController.deleteMe);
 
@@ -25,8 +26,9 @@ router.delete("/deleteMe", userController.deleteMe);
 router
   .route("/")
   .get(
-    // authController.restrictTo("user","admin"), 
-  userController.getAllUsers) // This needs to be restricted to only admin
+    // authController.restrictTo("user","admin"),
+    userController.getAllUsers
+  ) // This needs to be restricted to only admin
   .post(userController.createUser);
 router.route("/getAllOrgUsers/:organisationId").get(userController.getAllUsers);
 router
