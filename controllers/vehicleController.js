@@ -58,7 +58,9 @@ exports.createVehicleForOrganisation = setTransaction(
   }
 );
 exports.getPickupLocations = catchAsync(async (req, res, next) => {
-  const pickupLocations = await Vehicle.findById(req.params.vehicleId).select('pickupLocations');
+  const pickupLocations = await Vehicle.findById(req.params.vehicleId).select(
+    "pickupLocations"
+  );
   // const pickupLocations = vehicle.pickupLocations;
   res.status(200).json({
     status: "success",
@@ -84,3 +86,34 @@ exports.addPickupLocations = catchAsync(async (req, res, next) => {
     },
   });
 });
+
+exports.addUsersToVehicle = setTransaction(async (req, res, next, session) => {
+  // Add users to vehicle's users list
+  await addUsersToVehicle(req.params.id, req.body.userIds, session);
+  res.status(201).json({
+    status: "success",
+    message: "Users added successfully",
+  });
+});
+
+const addUsersToVehicle = async (vehicleId, userIds, session) => {
+  // Add users to vehicle's users list
+  const vehicle = await Vehicle.findByIdAndUpdate(
+    vehicleId,
+    { $addToSet: { users: { $each: userIds } } },
+    { new: true, runValidators: true },
+    { session }
+  );
+
+  // Bulk update user documents to add the vehicle to their vehicles list
+  const bulkOps = userIds.map((userId) => ({
+    updateOne: {
+      filter: { _id: userId },
+      update: { $addToSet: { vehicles: vehicleId } },
+    },
+  }));
+
+  await User.bulkWrite(bulkOps, { session });
+
+  return vehicle;
+};
