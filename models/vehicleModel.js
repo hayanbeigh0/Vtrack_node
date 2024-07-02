@@ -1,5 +1,22 @@
 const mongoose = require("mongoose");
-const { findByIdAndUpdate, findOne } = require("./userModel");
+
+function transformSchema(doc, ret) {
+  // Transform top-level properties
+  ret.id = ret._id;
+  delete ret._id;
+  delete ret.__v;
+
+  // Transform nested pickupLocations
+  if (ret.pickupLocations && Array.isArray(ret.pickupLocations)) {
+    ret.pickupLocations = ret.pickupLocations.map((location) => {
+      location.id = location._id;
+      delete location._id;
+      return location;
+    });
+  }
+
+  return ret;
+}
 
 const vehicleSchema = new mongoose.Schema(
   {
@@ -72,19 +89,11 @@ const vehicleSchema = new mongoose.Schema(
   {
     toJSON: {
       virtuals: true,
-      transform: function (doc, ret) {
-        ret.id = ret._id;
-        delete ret._id;
-        delete ret.__v;
-      },
+      transform: transformSchema,
     },
     toObject: {
       virtuals: true,
-      transform: function (doc, ret) {
-        ret.id = ret._id;
-        delete ret._id;
-        delete ret.__v;
-      },
+      transform: transformSchema,
     },
   }
 );
