@@ -5,6 +5,6 @@ const notificationController = require("../controllers/notificationController");
 
 router.use(authController.protect);
 
-router.route("/").post(notificationController.getNotifications);
+router.route("/").get(notificationController.getNotifications);
 
 module.exports = router;
