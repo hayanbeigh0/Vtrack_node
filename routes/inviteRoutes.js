@@ -6,6 +6,6 @@ const inviteController = require("../controllers/inviteController");
 router.use(authController.protect);
 
 router.route("/").post(inviteController.inviteUser);
-router.route("/accept").post(inviteController.inviteUser);
+router.route("/accept").post(inviteController.acceptInvite);
 
 module.exports = router;

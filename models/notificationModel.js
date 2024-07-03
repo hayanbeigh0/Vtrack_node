@@ -8,6 +8,14 @@ const notificationSchema = new Schema(
       ref: "User",
       required: true,
     },
+    token: {
+      type: String,
+      required: true,
+    },
+    organisationId: {
+      type: String,
+      required: true,
+    },
     content: {
       type: String,
       required: true,

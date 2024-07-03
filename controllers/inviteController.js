@@ -4,9 +4,22 @@ const { sendEmail } = require("../utils/email");
 const User = require("../models/userModel");
 const catchAsync = require("../utils/catchAsync");
 const Notification = require("../models/notificationModel");
+const Organisation = require("../models/organisationModel");
 
 exports.inviteUser = catchAsync(async (req, res) => {
   const { userId, organisationId, email } = req.body;
+
+  // Fetch the organization details
+  const organisation = await Organisation.findById(organisationId);
+  if (!organisation) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Organisation not found",
+    });
+  }
+
+  // Extract the organization name
+  const organisationName = organisation.name;
 
   // Generate a token and expiration date
   const token = generateInviteToken();
@@ -20,13 +33,14 @@ exports.inviteUser = catchAsync(async (req, res) => {
     expiresAt,
   });
 
-  const inviteLink = `http://localhost:${process.env.PORT}/invite/accept?token=${token}&organisationId=${organisationId}`;
-  const message = `You have been invited to join our organisation. Click the link to accept the invitation: ${inviteLink}`;
+  const message = `You have been invited to join ${organisationName}.`;
   const subject = "Invitation to join our Organisation";
 
   // Create a notification for the user
   await Notification.create({
     user: userId,
+    token: token,
+    organisationId: organisationId,
     content: `${message}`,
     type: "invite",
   });
@@ -58,8 +72,8 @@ exports.acceptInvite = catchAsync(async (req, res) => {
   }
 
   // Create a new user or update existing user to join the organisation
-  const user = await User.findOneAndUpdate(
-    { email: invite.email },
+  const user = await User.findByIdAndUpdate(
+    req.user.id,
     { $addToSet: { organisations: organisationId } },
     { new: true, upsert: true }
   );
