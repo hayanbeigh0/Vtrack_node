@@ -29,6 +29,11 @@ const notificationSchema = new Schema(
       type: Date,
       default: Date.now,
     },
+    status: {
+      type: String,
+      enum: ["expired", "active"],
+      default: "active",
+    },
     readStatus: { type: Boolean, default: false },
   },
   {

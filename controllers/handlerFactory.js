@@ -148,7 +148,7 @@ exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
     // To allow for nested GET reviews on Tour (hack)
     let filter = {};
-    if (req.params.tourId) filter = { ...filter, tour: req.params.tourId };
+    if (req.params.ttourId) filter = { ...filter, tour: req.params.tourId };
     if (req.params.organisationId) {
       if (Model === User) {
         filter = {
@@ -169,7 +169,22 @@ exports.getAll = (Model) =>
     console.log("filter", filter);
 
     // BUILD THE QUERY
-    let features = new APIFeatures(Model.find(filter), req.query)
+    let query = Model.find(filter);
+    if (Model === User) {
+      query = query.populate("organisations");
+    }
+    if (Model === Vehicle) {
+      query = query.populate({
+        path: "users",
+        populate: {
+          // Nested populate to populate 'organisations' field within users
+          path: "organisations",
+          model: "Organisation",
+        },
+      });
+    }
+
+    let features = new APIFeatures(query, req.query)
       .filter()
       .sort()
       .limitFields()

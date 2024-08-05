@@ -27,18 +27,24 @@ exports.createVehicle = factory.createOne(Vehicle);
 
 exports.createVehicleForOrganisation = setTransaction(
   async (req, res, next, session) => {
+    console.log(req.body);
     const userId = req.user.id;
     req.body.owner = req.user.id;
     req.body.createdBy = req.user.id;
+
+    // Create the vehicle document
     const docs = await Vehicle.create([req.body], { session });
     const doc = docs[0];
+
     let userUpdateObj = {};
     if (req.body.users) {
       userUpdateObj = {
         $addToSet: { vehicles: doc._id },
       };
     }
-    const user = await User.findByIdAndUpdate(
+
+    // Update the user with the new vehicle ID
+    let user = await User.findByIdAndUpdate(
       userId,
       { ...userUpdateObj },
       { session }
@@ -47,16 +53,26 @@ exports.createVehicleForOrganisation = setTransaction(
     if (!user) {
       throw new Error("User not found!");
     }
+
+    // Populate 'users' field in Vehicle and 'organisations' field in each User
+    const populatedDoc = await doc
+      .populate({
+        path: "users",
+        populate: { path: "organisations" }, // Deep populate organisations in each User
+      })
+      .execPopulate();
+
     req.user = user; // Pass the updated user to the next middleware
 
     return res.status(201).json({
       status: "success",
       data: {
-        data: doc,
+        data: populatedDoc,
       },
     });
   }
 );
+
 exports.getPickupLocations = catchAsync(async (req, res, next) => {
   const pickupLocations = await Vehicle.findById(req.params.vehicleId).select(
     "pickupLocations"

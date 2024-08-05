@@ -43,6 +43,7 @@ exports.inviteUser = catchAsync(async (req, res) => {
     organisationId: organisationId,
     content: `${message}`,
     type: "invite",
+    status: "active",
   });
 
   // Send the invitation email
@@ -55,7 +56,7 @@ exports.inviteUser = catchAsync(async (req, res) => {
 });
 
 exports.acceptInvite = catchAsync(async (req, res) => {
-  const { token, organisationId } = req.query;
+  const { token, organisationId, notificationId } = req.query;
 
   // Find the invite
   const invite = await Invite.findOne({
@@ -66,17 +67,22 @@ exports.acceptInvite = catchAsync(async (req, res) => {
 
   if (!invite || invite.expiresAt < Date.now()) {
     return res.status(400).json({
+      code: 100,
       status: "fail",
       message: "Invalid or expired invite token",
     });
   }
 
-  // Create a new user or update existing user to join the organisation
   const user = await User.findByIdAndUpdate(
     req.user.id,
     { $addToSet: { organisations: organisationId } },
     { new: true, upsert: true }
   );
+
+  await Notification.findByIdAndUpdate(notificationId, {
+    status: "expired",
+    readStatus: true,
+  });
 
   // Update invite status
   invite.status = "accepted";

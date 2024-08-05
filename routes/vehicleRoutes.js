@@ -45,4 +45,8 @@ router
   .get(vehicleController.getPickupLocations)
   .post(vehicleController.addPickupLocations);
 
+router
+  .route("/addUsersToVehicle/:id")
+  .post(vehicleController.addUsersToVehicle);
+
 module.exports = router;

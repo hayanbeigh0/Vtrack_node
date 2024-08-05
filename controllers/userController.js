@@ -84,17 +84,18 @@ exports.deleteMe = catchAsync(async (req, res) => {
 exports.getAllUsers = factory.getAll(User);
 exports.getUser = factory.getOne(User, {
   path: "organisations",
-  select: "name", // Only include the name field
+  // select: "name", // Only include the name field
 });
 exports.updateUser = factory.updateOne(User);
 exports.deleteUser = factory.deleteOne(User);
 
 exports.searchUser = catchAsync(async (req, res) => {
   const { name, role, organisationId } = req.query;
+  console.log(name, role, organisationId);
 
   const searchCriteria = {
     ...(name && { name: { $regex: new RegExp(name, "i") } }),
-    ...(role && { role: role }),
+    // ...(role && { role: role }),
     ...(organisationId && { organisations: organisationId }),
   };
 
