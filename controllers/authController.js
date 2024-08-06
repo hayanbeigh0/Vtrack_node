@@ -51,26 +51,53 @@ exports.signup = catchAsync(async (req, res, next) => {
 exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // 1) If email and password exists.
+  // 1) Check if email and password exist
   if (!email || !password) {
     return next(
       new AppError("Please provide a valid email and password!", 400)
     );
   }
-  // 2) Check if user exists && password is correct
-  const query =  User.findOne({ email }).select("+password");
-  query.populate({
-    path: "organisations",
-    // select: "name", // Only include the name field
-  });
 
-  const user = await query;
+  // 2) Check if user exists && password is correct
+  const user = await User.findOne({ email }).select("+password");
 
   if (!user || !(await user.correctPassword(password, user.password))) {
     return next(new AppError("Incorrect email or password!", 401));
   }
-  // 3) Everything ok, send token to client
-  createAndSendToken(user, 200, res);
+
+  // 3) Populate organisations with vehicleCount and userCount
+  await user
+    .populate({
+      path: "organisations",
+    })
+    .execPopulate();
+
+  // 4) Calculate userCount for each organisation
+  const populatedOrganisations = await Promise.all(
+    user.organisations.map(async (org) => {
+      const userCount = await User.countDocuments({ organisations: org._id });
+
+      const vehicleCount = org.vehicles.length;
+      return {
+        ...org.toObject(),
+        userCount,
+        vehicleCount,
+      };
+    })
+  );
+
+  // 5) Replace organisations in user object with populated organisations
+  user.organisations = populatedOrganisations;
+
+  // Ensure the user object is serialized correctly
+  const userObj = user.toObject({ virtuals: true });
+
+  // Manually set the populated organisations in the serialized user object
+  userObj.organisations = populatedOrganisations;
+  userObj._id = user.id;
+
+  // 6) Send token to client
+  createAndSendToken(userObj, 200, res);
 });
 
 exports.protect = catchAsync(async (req, res, next) => {

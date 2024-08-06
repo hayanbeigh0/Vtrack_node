@@ -4,6 +4,7 @@ const catchAsync = require("../utils/catchAsync");
 const factory = require("./handlerFactory");
 const setTransaction = require("../controllers/transactionController");
 const Vehicle = require("../models/vehicleModel");
+const Organisation = require("../models/organisationModel");
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -36,6 +37,15 @@ exports.createVehicleForOrganisation = setTransaction(
     const docs = await Vehicle.create([req.body], { session });
     const doc = docs[0];
 
+    // Update the Organisation with the new vehicle
+    if (doc.organisation) {
+      await Organisation.findByIdAndUpdate(
+        doc.organisation,
+        { $addToSet: { vehicles: doc._id } },
+        { session }
+      );
+    }
+
     let userUpdateObj = {};
     if (req.body.users) {
       userUpdateObj = {
@@ -54,7 +64,7 @@ exports.createVehicleForOrganisation = setTransaction(
       throw new Error("User not found!");
     }
 
-    // Populate 'users' field in Vehicle and 'organisations' field in each User
+    // Populate the 'users' field in the Vehicle document
     const populatedDoc = await doc
       .populate({
         path: "users",

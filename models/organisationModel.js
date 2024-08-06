@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const { findByIdAndUpdate, findOne } = require("./userModel");
 const User = require("./userModel");
+const Vehicle = require("./vehicleModel");
 
 const organisationSchema = new mongoose.Schema(
   {
@@ -24,7 +24,7 @@ const organisationSchema = new mongoose.Schema(
       trim: true,
       maxlength: [
         50,
-        "An organisation code must have less or equal to 50 characters",
+        "An organisation address must have less or equal to 50 characters",
       ],
     },
     code: {
@@ -38,7 +38,7 @@ const organisationSchema = new mongoose.Schema(
       ],
       minlength: [
         2,
-        "A organisation code must have greater or equal to 4 characters",
+        "An organisation code must have greater or equal to 2 characters",
       ],
     },
     createdAt: { type: Date, default: Date.now },
@@ -85,7 +85,19 @@ const organisationSchema = new mongoose.Schema(
   }
 );
 
-organisationSchema.index({ name: 1, buses: 1 });
+organisationSchema.methods.getUserCount = async function () {
+  const countResult = await User.aggregate([
+    { $match: { organisations: this._id } },
+    { $count: "count" },
+  ]);
+  return countResult.length ? countResult[0].count : 0;
+};
+
+organisationSchema.virtual("vehicleCount").get(function () {
+  return this.vehicles.length;
+});
+
+organisationSchema.index({ name: 1, vehicles: 1 });
 
 organisationSchema.pre(/^find/, function (next) {
   this.find({ active: { $ne: false } }); // This will not return any organisation which has "active" set to false.
