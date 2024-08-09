@@ -49,4 +49,6 @@ router
   .route("/addUsersToVehicle/:id")
   .post(vehicleController.addUsersToVehicle);
 
+router.route("/getVehicleUsers/:id").get(vehicleController.getVehicleUsers);
+
 module.exports = router;

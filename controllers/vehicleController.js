@@ -143,3 +143,21 @@ const addUsersToVehicle = async (vehicleId, userIds, session) => {
 
   return vehicle;
 };
+
+exports.getVehicleUsers = catchAsync(async (req, res, next) => {
+  // Find the vehicle by ID and populate only the users field
+  const vehicle = await Vehicle.findById(req.params.id)
+    .select("users") // Select only the 'users' field
+    .populate({
+      path: "users",
+      select: "id name email", // Select only 'id', 'name', and 'email' fields from users
+    });
+
+  // Send the response
+  res.status(200).json({
+    status: "success",
+    data: {
+      users: vehicle.users, // Send only the users in the response
+    },
+  });
+});

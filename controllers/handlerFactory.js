@@ -71,6 +71,11 @@ exports.deleteOne = (Model) => {
 exports.updateOne = (Model) =>
   setTransaction(async (req, res, next, session) => {
     console.log(req.params.id);
+    // Check if the model is Vehicle and remove the users property if it exists because when updating the vehicle
+    // we should not update the users property as that can be updated using a different API.
+    if (Model === Vehicle && req.body.users) {
+      delete req.body.users;
+    }
     const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
@@ -146,9 +151,8 @@ exports.getOne = (Model, popOptions) =>
 
 exports.getAll = (Model) =>
   catchAsync(async (req, res, next) => {
-    // To allow for nested GET reviews on Tour (hack)
     let filter = {};
-    if (req.params.ttourId) filter = { ...filter, tour: req.params.tourId };
+    if (req.params.tourId) filter = { ...filter, tour: req.params.tourId };
     if (req.params.organisationId) {
       if (Model === User) {
         filter = {
@@ -170,17 +174,15 @@ exports.getAll = (Model) =>
 
     // BUILD THE QUERY
     let query = Model.find(filter);
+
     if (Model === User) {
       query = query.populate("organisations");
     }
+
     if (Model === Vehicle) {
       query = query.populate({
-        path: "users",
-        populate: {
-          // Nested populate to populate 'organisations' field within users
-          path: "organisations",
-          model: "Organisation",
-        },
+        path: "driver",
+        select: "id name", // Select only the 'id' and 'name' fields
       });
     }
 
@@ -193,8 +195,22 @@ exports.getAll = (Model) =>
     console.log(features);
 
     // EXECUTE THE QUERY
-    const data = await features.query;
-    // console.log(data);
+    let data = await features.query;
+
+    // Efficiently calculate userCount
+    if (Model === Vehicle) {
+      data = await Promise.all(
+        data.map(async (vehicle) => {
+          const userCount = await User.countDocuments({
+            vehicles: vehicle._id,
+          });
+          vehicle = vehicle.toObject();
+          vehicle.userCount = userCount;
+          vehicle.users = null; // Set users to null after calculating count
+          return vehicle;
+        })
+      );
+    }
 
     // SEND RESPONSE
     res.status(200).json({
