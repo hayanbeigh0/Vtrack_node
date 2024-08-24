@@ -30,6 +30,7 @@ exports.inviteUser = catchAsync(async (req, res) => {
     email,
     organisation: organisationId,
     token,
+    status: "pending",
     expiresAt,
   });
 

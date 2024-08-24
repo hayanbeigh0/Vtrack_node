@@ -48,6 +48,9 @@ router
 router
   .route("/addUsersToVehicle/:id")
   .post(vehicleController.addUsersToVehicle);
+router
+  .route("/removeUserFromVehicle/:id")
+  .post(vehicleController.removeUserFromVehicle);
 
 router.route("/getVehicleUsers/:id").get(vehicleController.getVehicleUsers);
 

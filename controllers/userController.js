@@ -118,3 +118,38 @@ exports.searchUser = catchAsync(async (req, res) => {
     });
   }
 });
+
+exports.removeUserOrganisation = catchAsync(async (req, res, next) => {
+  if (!req.params.organisationId || !req.params.userId) {
+    return res.status(404).json({
+      status: "fail",
+      message: "No user/organisation id provided!",
+    });
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.params.userId,
+    { $pull: { organisations: req.params.organisationId } },
+    { new: true } // This option returns the modified document after the update
+  );
+
+  if (!user) {
+    return res.status(404).json({
+      status: "fail",
+      message: "User not found!",
+    });
+  }
+
+  // Check if the organisation was actually removed
+  if (!user.organisations.includes(req.params.organisationId)) {
+    return res.status(200).json({
+      status: "success",
+      message: "Organisation removed from user!",
+    });
+  }
+
+  res.status(404).json({
+    status: "fail",
+    message: "Organisation not found for this user!",
+  });
+});

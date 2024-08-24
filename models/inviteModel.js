@@ -47,5 +47,7 @@ const inviteSchema = new Schema(
   }
 );
 
+inviteSchema.index({ email: 1, status: 1, organisation: 1 }, { unique: true });
+
 const Invite = mongoose.model("Invite", inviteSchema);
 module.exports = Invite;

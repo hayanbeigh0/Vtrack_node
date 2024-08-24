@@ -114,12 +114,16 @@ exports.addPickupLocations = catchAsync(async (req, res, next) => {
 });
 
 exports.addUsersToVehicle = setTransaction(async (req, res, next, session) => {
-  // Add users to vehicle's users list
-  await addUsersToVehicle(req.params.id, req.body.userIds, session);
-  res.status(201).json({
-    status: "success",
-    message: "Users added successfully",
-  });
+  try {
+    // Add users to vehicle's users list
+    await addUsersToVehicle(req.params.id, req.body.userIds, session);
+    res.status(201).json({
+      status: "success",
+      message: "Users added successfully",
+    });
+  } catch (err) {
+    next(new AppError(err.message, 400));
+  }
 });
 
 const addUsersToVehicle = async (vehicleId, userIds, session) => {
@@ -127,8 +131,7 @@ const addUsersToVehicle = async (vehicleId, userIds, session) => {
   const vehicle = await Vehicle.findByIdAndUpdate(
     vehicleId,
     { $addToSet: { users: { $each: userIds } } },
-    { new: true, runValidators: true },
-    { session }
+    { new: true, runValidators: true, session } // <-- session included here
   );
 
   // Bulk update user documents to add the vehicle to their vehicles list
@@ -140,6 +143,39 @@ const addUsersToVehicle = async (vehicleId, userIds, session) => {
   }));
 
   await User.bulkWrite(bulkOps, { session });
+
+  return vehicle;
+};
+
+exports.removeUserFromVehicle = setTransaction(
+  async (req, res, next, session) => {
+    try {
+      // Remove a user from vehicle's users list
+      await removeUserFromVehicle(req.params.id, req.body.userId, session);
+      res.status(200).json({
+        status: "success",
+        message: "User removed successfully",
+      });
+    } catch (err) {
+      next(new AppError(err.message, 400));
+    }
+  }
+);
+
+const removeUserFromVehicle = async (vehicleId, userId, session) => {
+  // Remove the user from the vehicle's users list
+  const vehicle = await Vehicle.findByIdAndUpdate(
+    vehicleId,
+    { $pull: { users: userId } },
+    { new: true, runValidators: true, session } // <-- Correct session inclusion
+  );
+
+  // Update the user document to remove the vehicle from their vehicles list
+  await User.findByIdAndUpdate(
+    userId,
+    { $pull: { vehicles: vehicleId } },
+    { session }
+  );
 
   return vehicle;
 };

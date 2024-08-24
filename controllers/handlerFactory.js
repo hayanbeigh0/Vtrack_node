@@ -71,16 +71,39 @@ exports.deleteOne = (Model) => {
 exports.updateOne = (Model) =>
   setTransaction(async (req, res, next, session) => {
     console.log(req.params.id);
-    // Check if the model is Vehicle and remove the users property if it exists because when updating the vehicle
-    // we should not update the users property as that can be updated using a different API.
+
+    // Check if the model is Vehicle and remove the users property if it exists
     if (Model === Vehicle && req.body.users) {
       delete req.body.users;
     }
-    const doc = await Model.findByIdAndUpdate(req.params.id, req.body, {
+
+    // Update the document
+    let query = Model.findByIdAndUpdate(req.params.id, req.body, {
       new: true,
       runValidators: true,
     });
-    console.log(doc);
+
+    // Populate the driver field if the model is Vehicle
+    if (Model === Vehicle) {
+      query = query.populate({
+        path: "driver",
+        select: "id name", // Select only the 'id' and 'name' fields
+      });
+    }
+
+    const doc = await query;
+    if (Model == Vehicle) {
+      const userCount = await User.countDocuments({
+        vehicles: req.params._id,
+      });
+      console.log(userCount);
+      doc.userCount = userCount;
+      doc.users = null;
+    }
+
+    // console.log(doc);
+
+    // Handle specific logic for Organisation model
     if (Model === Organisation) {
       await helpers.updateVehiclesAndUser(
         doc,
