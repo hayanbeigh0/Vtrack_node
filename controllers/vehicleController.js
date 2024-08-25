@@ -5,6 +5,7 @@ const factory = require("./handlerFactory");
 const setTransaction = require("../controllers/transactionController");
 const Vehicle = require("../models/vehicleModel");
 const Organisation = require("../models/organisationModel");
+const mongoose = require("mongoose");
 
 const filterObj = (obj, ...allowedFields) => {
   const newObj = {};
@@ -17,7 +18,7 @@ const filterObj = (obj, ...allowedFields) => {
 };
 
 exports.getVehicles = factory.getAll(Vehicle);
-exports.getOrganisationVehicles = factory.getAll(Vehicle);
+// exports.getOrganisationVehicles = factory.getAll(Vehicle);
 
 exports.getVehicle = factory.getOne(Vehicle);
 // exports.getVehicle = factory.getOne(Vehicle, { path: "owner" });
@@ -194,6 +195,69 @@ exports.getVehicleUsers = catchAsync(async (req, res, next) => {
     status: "success",
     data: {
       users: vehicle.users, // Send only the users in the response
+    },
+  });
+});
+
+async function getVehiclesByOrganisation(organisationId) {
+  const vehicles = await Vehicle.aggregate([
+    {
+      $match: {
+        organisation: mongoose.Types.ObjectId(organisationId), // Match vehicles by organisation ID
+      },
+    },
+    {
+      $lookup: {
+        from: "users", // The name of the User collection
+        localField: "driver", // The field in the Vehicle collection
+        foreignField: "_id", // The field in the User collection
+        as: "driverDetails", // The name of the new array field
+      },
+    },
+    {
+      $unwind: {
+        path: "$driverDetails", // Unwind the driverDetails array to get a single document
+        preserveNullAndEmptyArrays: true, // Keep vehicles even if they don't have a driver
+      },
+    },
+    {
+      $project: {
+        id: "$_id", // Transform _id to id
+        _id: 0, // Exclude the original _id
+        name: 1,
+        capacity: 1,
+        driver: {
+          id: "$driverDetails._id", // Populate the driver's _id
+          name: "$driverDetails.name", // Populate the driver's name
+          email: "$driverDetails.email", // Populate the driver's email
+        },
+        vehicleNumber: 1,
+        owner: 1,
+        createdBy: 1,
+        route: 1,
+        createdAt: 1,
+        organisation: 1,
+        pickupLocations: 1,
+        userCount: { $size: "$users" }, // Count the number of users
+      },
+    },
+  ]);
+
+  return vehicles;
+}
+
+exports.getOrganisationVehicles = catchAsync(async (req, res, next) => {
+  const organisationId = req.params.organisationId;
+  const vehicles = await getVehiclesByOrganisation(organisationId);
+
+  if (!vehicles || vehicles.length === 0) {
+    return next(new AppError("No vehicles found for this organisation", 404));
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: {
+      vehicles,
     },
   });
 });

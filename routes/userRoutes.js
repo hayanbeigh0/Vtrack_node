@@ -31,7 +31,7 @@ router
   ) // This needs to be restricted to only admin
   .post(userController.createUser);
 router.route("/getAllOrgUsers/:organisationId").get(userController.getAllUsers);
-router.route("/orgUsers/:organisationId/:userId").get(userController.removeUserOrganisation);
+router.route("/orgUsers/:organisationId/:userId").delete(userController.removeUserOrganisation);
 router
   .route("/:id")
   .get(userController.getUser)

@@ -2,6 +2,8 @@ const User = require("../models/userModel");
 // const AppError = require('../utils/appError');
 const catchAsync = require("../utils/catchAsync");
 const factory = require("../controllers/handlerFactory");
+const Organisation = require("../models/organisationModel");
+const Notification = require("../models/notificationModel");
 
 const filterObj = (obj, ...unAllowedFields) => {
   const newObj = {};
@@ -82,10 +84,59 @@ exports.deleteMe = catchAsync(async (req, res) => {
 });
 
 exports.getAllUsers = factory.getAll(User);
-exports.getUser = factory.getOne(User, {
-  path: "organisations",
-  // select: "name", // Only include the name field
+
+exports.getUser = catchAsync(async (req, res, next) => {
+  // 1) Get the user document with populated organisations
+  let user = await User.findById(req.user.id).populate({
+    path: "organisations",
+  });
+
+  if (!user) {
+    return next(new AppError("No user found with that ID", 404));
+  }
+
+  // 2) Calculate userCount and vehicleCount for each organisation
+  const populatedOrganisations = await Promise.all(
+    user.organisations.map(async (org) => {
+      const userCount = await User.countDocuments({ organisations: org._id });
+      const vehicleCount = org.vehicles.length;
+
+      return {
+        ...org.toObject(),
+        userCount,
+        vehicleCount,
+      };
+    })
+  );
+
+  // 3) Replace organisations in user object with populated organisations
+  user.organisations = populatedOrganisations;
+
+  // Convert the Mongoose document to a plain JavaScript object
+  let userObj = user.toObject({ virtuals: true });
+
+  // Manually set the populated organisations in the serialized user object
+  userObj.organisations = populatedOrganisations;
+  userObj._id = user.id;
+
+  // 4) Get unread notifications count
+  const unreadNotificationsCount = await Notification.countDocuments({
+    user: req.user.id,
+    readStatus: false,
+  });
+
+  // 5) Add unreadNotificationsCount to the user object
+  userObj.unreadNotificationsCount = unreadNotificationsCount;
+
+  // 6) Return the user object
+  res.status(200).json({
+    status: "success",
+    data: {
+      data: userObj, // Include the modified user object
+    },
+  });
 });
+
 exports.updateUser = factory.updateOne(User);
 exports.deleteUser = factory.deleteOne(User);
 
@@ -120,17 +171,39 @@ exports.searchUser = catchAsync(async (req, res) => {
 });
 
 exports.removeUserOrganisation = catchAsync(async (req, res, next) => {
-  if (!req.params.organisationId || !req.params.userId) {
-    return res.status(404).json({
+  const { organisationId, userId } = req.params;
+
+  if (!organisationId || !userId) {
+    return res.status(400).json({
       status: "fail",
       message: "No user/organisation id provided!",
     });
   }
 
+  // Find the organisation and populate the owner field to check ownership
+  const organisation =
+    await Organisation.findById(organisationId).populate("owner");
+  if (!organisation) {
+    return res.status(404).json({
+      status: "fail",
+      message: "Organisation not found!",
+    });
+  }
+
+  // Check if the user is the owner of the organisation
+  if (organisation.owner._id.toString() === userId) {
+    return res.status(403).json({
+      status: "fail",
+      errorCode: "0001", // This code suggests that the user is the owner of the organisation and can't be removed.
+      message: "You cannot remove yourself from the organisation that you own!",
+    });
+  }
+
+  // Remove the organisation from the user's organisations array
   const user = await User.findByIdAndUpdate(
-    req.params.userId,
-    { $pull: { organisations: req.params.organisationId } },
-    { new: true } // This option returns the modified document after the update
+    userId,
+    { $pull: { organisations: organisationId } },
+    { new: true } // Return the updated document
   );
 
   if (!user) {
@@ -140,16 +213,8 @@ exports.removeUserOrganisation = catchAsync(async (req, res, next) => {
     });
   }
 
-  // Check if the organisation was actually removed
-  if (!user.organisations.includes(req.params.organisationId)) {
-    return res.status(200).json({
-      status: "success",
-      message: "Organisation removed from user!",
-    });
-  }
-
-  res.status(404).json({
-    status: "fail",
-    message: "Organisation not found for this user!",
+  res.status(200).json({
+    status: "success",
+    message: "Organisation removed from user!",
   });
 });

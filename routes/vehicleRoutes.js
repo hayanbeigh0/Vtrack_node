@@ -25,7 +25,7 @@ router
   .route("/getOrgVehicles/:organisationId")
   .get(
     authController.restrictTo("admin", "org-admin"),
-    vehicleController.getVehicles
+    vehicleController.getOrganisationVehicles
   );
 router
   .route("/:id")
